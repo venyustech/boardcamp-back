@@ -9,9 +9,17 @@ const customerSchema = joi.object({
 })
 
 export async function getCustomers(req, res) {
+    const { cpf } = req.query;
 
     try {
-        res.send("ok");
+        if (!cpf) {
+            const result = await db.query(`SELECT * FROM customers`);
+            return res.send(result.rows);
+        }
+
+        const isThereCPFonSystem = await db.query(`SELECT * FROM customers WHERE cpf LIKE '$1%'`, [cpf]);
+        res.send(isThereCPFonSystem)
+
     } catch (error) {
         res.status(500).send(error);
     }
