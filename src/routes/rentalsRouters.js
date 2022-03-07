@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { deleteRental, getRentals, postRental, returnRental } from '../controllers/rentalsControllers';
+import { deleteRental, getRentals, postRental, returnRental } from '../controllers/rentalsControllers.js';
 
 const rentalsRouters = Router();
 
