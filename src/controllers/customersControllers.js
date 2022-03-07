@@ -17,7 +17,7 @@ export async function getCustomers(req, res) {
             return res.send(result.rows);
         }
 
-        const isThereCPFonSystem = await db.query(`SELECT * FROM customers WHERE cpf LIKE '$1%'`, [cpf]);
+        const isThereCPFonSystem = await db.query(`SELECT * FROM customers WHERE cpf LIKE $1`, [`${cpf}%`]);
         res.send(isThereCPFonSystem.rows)
 
     } catch (error) {
