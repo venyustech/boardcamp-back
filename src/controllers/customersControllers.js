@@ -69,9 +69,20 @@ export async function putCustomer(req, res) {
     }
 
     try {
-        // const findCustomerId = await db.query(` SELECT * FROM customers WHERE id = $1`, [id]).rows[0];
+        const findCustomerId = await db.query(` SELECT * FROM customers WHERE id = $1`, [id]);
 
-        res.send("ok");
+        if (findCustomerId.rows[0].cpf !== 0) {
+            const isThereCPF = await db.query(`SELECT * FROM customers WHERE cpf = $1`, [cpf]);
+            if (isThereCPF.rowCount > 0)
+                return res.status(409).send("cpf já existente");
+        }
+
+        await db.query(`
+            UPDATE customers 
+                SET name = $1, phone = $2, cpf = $3, birthday = $4 
+            WHERE id = $5`, [name, phone, cpf, birthday, id]
+        );
+        res.sendStatus(201);
     } catch (error) {
         res.status(500).send(error);
     }
