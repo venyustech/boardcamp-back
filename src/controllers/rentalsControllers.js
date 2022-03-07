@@ -10,8 +10,31 @@ const rentalSchema = joi.object({
 
 export async function getRentals(req, res) {
     try {
+        console.log("leu")
 
-        res.sendStatus("ok")
+        const result = await db.query(`
+             SELECT 
+                rentals.*, 
+                customers.id AS "customerId",
+                customers.name AS "customerName",
+                games.id AS "gameId",
+                games.name AS "gameName",
+                games."categoryId",
+                categories.name AS "categoryName"
+            FROM rentals
+                JOIN customers
+                    ON  rentals."customerId" = customers.id
+                JOIN games 
+                    ON rentals."gameId" = games.id
+                JOIN categories
+                    ON games."categoryId" = categories.id
+
+        `)
+        console.log("leu")
+        if (result.rowCount === 0)
+            return res.sendStatus(404);
+
+        return res.send(result.rows);
 
     } catch (error) {
         res.status(500).send(error);
