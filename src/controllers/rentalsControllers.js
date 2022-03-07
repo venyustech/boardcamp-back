@@ -33,8 +33,30 @@ export async function getRentals(req, res) {
         console.log("leu")
         if (result.rowCount === 0)
             return res.sendStatus(404);
-
-        return res.send(result.rows);
+        const rentals = result.rows.map(r => {
+            return {
+                id: r.id,
+                customerId: r.customerId,
+                gameId: dayjs(r.gameId).format("YYYY-MM-DD"),
+                rentDate: dayjs(r.rentDate).format("YYYY-MM-DD"),
+                daysRented: r.daysRented,
+                returnDate: dayjs(r.returnDate).format("YYYY-MM-DD"),
+                originalPrice: r.originalPrice,
+                delayFee: r.delayFee,
+                customer: {
+                    id: r.customerId,
+                    name: r.customerName
+                },
+                game: {
+                    id: r.gameId,
+                    name: r.gameName,
+                    categoryId: r.categoryId,
+                    categoryName: r.categoryName
+                }
+            }
+        });
+        console.log(rentals)
+        return res.send(rentals);
 
     } catch (error) {
         res.status(500).send(error);
@@ -78,11 +100,59 @@ export async function postRental(req, res) {
         res.status(500).send(error);
     }
 }
+///POST rentals/:id/return
 export async function returnRental(req, res) {
-    try {
-        res.sendStatus("ok")
+    const { id } = req.params;
 
+    try {
+        let newDelayFee = 10;
+
+        const isThereRental = await db.query(` SELECT * FROM rentals WHERE id = $1 `, [id])
+
+        if (isThereRental.rowCount === 0)
+            return res.sendStatus(404)
+
+        if (isThereRental.rows[0].returnDate !== null)
+            return res.status(404).send("aluguel finalizado");
+
+        const newReturnDate = dayjs().format("YYYY-MM-DD");
+        console.log("1")
+        console.log(newReturnDate)
+
+        // delayFee = número de dias de atraso vezes o preço por dia do jogo no momento do retorno
+        const returnDateLimitWithoutDelays = Date.parse(
+            dayjs(isThereRental.rows[0].rentDate).add(isThereRental.rows[0].daysRented, "day")
+        );
+        console.log("2")
+        console.log(returnDateLimitWithoutDelays)
+
+        const delayedDays = Math.round(
+            (Date.parse(newReturnDate) - returnDateLimitWithoutDelays) / (24 * 60 * 60 * 1000)
+        );
+        console.log("3")
+        console.log(delayedDays, Date.parse(newReturnDate))
+
+        if (delayedDays > 0) {
+            const getGame = await db.query(` 
+                SELECT * FROM  games 
+                WHERE id = $1`, [isThereRental.rows[0].gameId]
+            )
+            newDelayFee = delayedDays * getGame.rows[0].pricePerDay;
+
+        }
+        console.log("4")
+        console.log(newReturnDate, newDelayFee, id)
+        //resposta do terminal: 2022-03-07 0 1
+        await db.query(`
+            UPDATE rentals 
+                SET 
+                    "returnDate" = $1,
+                    "delayFee" = $2
+            WHERE id = $3`, [newReturnDate, newDelayFee, id]
+        );
+        return res.sendStatus(200);
     } catch (error) {
+        console.log(error)
         res.status(500).send(error);
     }
 }
