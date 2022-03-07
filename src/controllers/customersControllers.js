@@ -1,4 +1,5 @@
 import joi from "joi";
+import db from "../db.js";
 
 const customerSchema = joi.object({
     name: joi.string().required(),
@@ -24,9 +25,17 @@ export async function getCustomerById(req, res) {
     }
 }
 export async function postCustomer(req, res) {
+    const { name, phone, cpf, birthday } = req.body;
 
     try {
-        res.send("ok");
+        const isThereCPF = await db.query(` SELECT * FROM customers WHERE cpf=$1`, [cpf]);
+        if (isThereCPF.rowCount > 0)
+            return res.status(409).send("cpf já existente");
+
+        await db.query(` 
+        INSERT INTO customers
+            (name, phone, cpf, birthday ) VALUES ($1, $2, $3, $4)`, [name, phone, cpf, birthday])
+        return res.status(201).send("OK");
     } catch (error) {
         res.status(500).send(error);
     }
