@@ -11,7 +11,11 @@ const gameSchema = joi.object({
 
 export async function getGames(req, res) {
     try {
-        const result = await db.query(`SELECT * FROM games`);
+        const result = await db.query(`
+        SELECT games.*, categories.name AS "categoryName" FROM games
+            JOIN categories 
+                ON games."categoryId" = categories.id
+        `);
         res.send(result.rows);
     } catch (error) {
         res.status(500).send(error);
