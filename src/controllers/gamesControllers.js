@@ -1,3 +1,4 @@
+import db from '../db.js';
 import joi from "joi";
 
 const gameSchema = joi.object({
@@ -10,14 +11,15 @@ const gameSchema = joi.object({
 
 export async function getGames(req, res) {
     try {
-        res.send("ok");
+        const result = await db.query(`SELECT * FROM games`);
+        res.send(result.rows);
     } catch (error) {
         res.status(500).send(error);
     }
 }
 
 export async function postGame(req, res) {
-
+    const { name, image, stockTotal, categoryId, pricePerDay } = req.body;
 
     const validation = gameSchema.validate(req.body, { abortEarly: false });
     if (validation.error) {
@@ -25,7 +27,21 @@ export async function postGame(req, res) {
         return res.status(422).send(errors);
     }
     try {
-        res.send("ok");
+        const isThereGame = await db.query(`SELECT * FROM games WHERE name = $1`, [name]);
+        if (isThereGame.rowCount > 0)
+            return res.status(409).send("Jogo já existente");
+
+        const isThereCategoryId = await db.query(`SELECT * FROM categories WHERE id=$1`, [categoryId]);
+        if (isThereCategoryId.rowCount === 0)
+            return res.status(400).send("categoryId não existente");
+
+        await db.query(
+            `INSERT INTO games
+                (name, image, "stockTotal", "categoryId", "pricePerDay")
+            VALUES
+                ($1, $2, $3, $4, $5)`, [name, image, stockTotal, categoryId, pricePerDay]
+        );
+        res.status(201).send("OK");
     } catch (error) {
         res.status(500).send(error);
     }
