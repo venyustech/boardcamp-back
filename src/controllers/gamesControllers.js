@@ -16,6 +16,10 @@ export async function getGames(req, res) {
             JOIN categories 
                 ON games."categoryId" = categories.id
         `);
+
+        if (result.rowCount === 0)
+            return res.status(400).send("Não há jogos");
+
         res.send(result.rows);
     } catch (error) {
         res.status(500).send(error);
