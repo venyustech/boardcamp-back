@@ -10,8 +10,6 @@ const rentalSchema = joi.object({
 
 export async function getRentals(req, res) {
     try {
-        console.log("leu")
-
         const result = await db.query(`
              SELECT 
                 rentals.*, 
@@ -30,7 +28,6 @@ export async function getRentals(req, res) {
                     ON games."categoryId" = categories.id
 
         `)
-        console.log("leu")
         if (result.rowCount === 0)
             return res.sendStatus(404);
         const rentals = result.rows.map(r => {
@@ -55,7 +52,6 @@ export async function getRentals(req, res) {
                 }
             }
         });
-        console.log(rentals)
         return res.send(rentals);
 
     } catch (error) {
@@ -95,12 +91,9 @@ export async function postRental(req, res) {
 
         res.sendStatus(201);
     } catch (error) {
-        console.log("error")
-
         res.status(500).send(error);
     }
 }
-///POST rentals/:id/return
 export async function returnRental(req, res) {
     const { id } = req.params;
 
@@ -116,21 +109,15 @@ export async function returnRental(req, res) {
             return res.status(404).send("aluguel finalizado");
 
         const newReturnDate = dayjs().format("YYYY-MM-DD");
-        console.log("1")
-        console.log(newReturnDate)
 
-        // delayFee = número de dias de atraso vezes o preço por dia do jogo no momento do retorno
         const returnDateLimitWithoutDelays = Date.parse(
             dayjs(isThereRental.rows[0].rentDate).add(isThereRental.rows[0].daysRented, "day")
         );
-        console.log("2")
-        console.log(returnDateLimitWithoutDelays)
 
         const delayedDays = Math.round(
             (Date.parse(newReturnDate) - returnDateLimitWithoutDelays) / (24 * 60 * 60 * 1000)
         );
-        console.log("3")
-        console.log(delayedDays, Date.parse(newReturnDate))
+
 
         if (delayedDays > 0) {
             const getGame = await db.query(` 
@@ -140,9 +127,6 @@ export async function returnRental(req, res) {
             newDelayFee = delayedDays * getGame.rows[0].pricePerDay;
 
         }
-        console.log("4")
-        console.log(newReturnDate, newDelayFee, id)
-        //resposta do terminal: 2022-03-07 0 1
         await db.query(`
             UPDATE rentals 
                 SET 
@@ -152,7 +136,6 @@ export async function returnRental(req, res) {
         );
         return res.sendStatus(200);
     } catch (error) {
-        console.log(error)
         res.status(500).send(error);
     }
 }
