@@ -39,6 +39,12 @@ export async function getCustomerById(req, res) {
 export async function postCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
 
+    const validation = customerSchema.validate(req.body, { abortEarly: false });
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
     try {
         const isThereCPF = await db.query(` SELECT * FROM customers WHERE cpf=$1`, [cpf]);
         if (isThereCPF.rowCount > 0)
@@ -53,8 +59,18 @@ export async function postCustomer(req, res) {
     }
 }
 export async function putCustomer(req, res) {
+    const { name, phone, cpf, birthday } = req.body;
+    const { id } = req.params;
+
+    const validation = customerSchema.validate(req.body, { abortEarly: false });
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
 
     try {
+        // const findCustomerId = await db.query(` SELECT * FROM customers WHERE id = $1`, [id]).rows[0];
+
         res.send("ok");
     } catch (error) {
         res.status(500).send(error);
