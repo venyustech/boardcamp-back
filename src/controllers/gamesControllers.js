@@ -10,7 +10,19 @@ const gameSchema = joi.object({
 })
 
 export async function getGames(req, res) {
+    const { name } = req.query;
     try {
+        if (name) {
+            const result = await db.query(`
+                SELECT games.*, categories.name AS "categoryName" FROM games
+                JOIN categories 
+                    ON games."categoryId" = categories.id
+                WHERE name LIKE '$1%'`, [name]
+            );
+
+            return res.send(result.rows);
+        }
+
         const result = await db.query(`
         SELECT games.*, categories.name AS "categoryName" FROM games
             JOIN categories 
